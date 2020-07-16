@@ -1,0 +1,57 @@
+version: "3.6"
+services:
+  mysql:
+    image: mysql:${MYSQL_VERSION}
+    container_name: mysql
+    ports:
+      - "${MYSQL_HOST_PORT}:3306"
+    volumes:
+      - ${MYSQL_CONF_FILE}:/etc/mysql/conf.d/mysql.cnf:ro
+      - ${MYSQL_DATA_DIR}:/var/lib/mysql/:rw
+    restart: on-failure
+    networks:
+      - default
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      TZ: Asia/Shanghai
+
+  redis:
+    image: redis:${REDIS_VERSION}
+    container_name: redis
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - ${REDIS_LOG_DIR}:/var/log/redis/:rw
+      - ${REDIS_CONF_FILE}:/usr/local/etc/redis/redis.conf:ro
+      - ${REDIS_DIR}:/var/lib/redis/6379/:rw
+    command:
+      - /usr/local/etc/redis/redis.conf
+    restart: on-failure
+    networks:
+      - default
+    ports:
+      - "${REDIS_HOST_PORT}:6379"
+
+  nacos:
+    image: nacos/nacos-server:${NACOS_VERSION}
+    container_name: nacos
+    environment:
+      - "PREFER_HOST_MODE=${PREFER_HOST_MODE}"
+      - "MODE=${MODE}"
+      - "SPRING_DATASOURCE_PLATFORM=${SPRING_DATASOURCE_PLATFORM}"
+      - "MYSQL_SERVICE_HOST=${MYSQL_SERVICE_HOST}"
+      - "MYSQL_SERVICE_DB_NAME=${MYSQL_SERVICE_DB_NAME}"
+      - "MYSQL_SERVICE_PORT=${MYSQL_SERVICE_PORT}"
+      - "MYSQL_SERVICE_USER=${MYSQL_SERVICE_USER}"
+      - "MYSQL_SERVICE_PASSWORD=${MYSQL_SERVICE_PASSWORD}"
+    volumes:
+      - ${NACOS_LOG_DIR}:/home/nacos/logs:rw
+      - ${NACOS_PROPERTIES}:/home/nacos/init.d/custom.properties
+    depends_on:
+      - mysql
+    ports:
+      - 8848:8848
+    restart: on-failure
+    
+networks:
+  default:
